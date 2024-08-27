@@ -524,7 +524,12 @@ class RuleEngine2:
                 s_rule = rule.split()
                 rule_type = s_rule[0].upper()
                 domain = s_rule[1]
-                ips = s_rule[2].split(',') # allow multiple ip's thru commas
+
+                # handle multiple arguments
+                if rule_type.upper() == "TXT":
+                    arguments = [' '.join(s_rule[2:])] # allow spaces in txt record
+                else:
+                    arguments = s_rule[2].split(',') # allow multiple ip's thru commas
 
                 # only try this if the rule is long enough
                 if len(s_rule) == 4:
@@ -551,27 +556,27 @@ class RuleEngine2:
                 except:
                     raise RuleError_BadRegularExpression(lineno)
 
-                # replace self in the list of ips and list of rebinds (if any)
-                ips = self._replace_self(ips)
+                # replace self in the list of arguments(ips) and list of rebinds (if any)
+                arguments = self._replace_self(arguments)
                 if rebinds is not None:
                     rebinds = self._replace_self(rebinds)
 
                 # Deal With Special IPv6 Nonsense
                 if rule_type.upper() == "AAAA":
                     tmp_ip_array = []
-                    for ip in ips:
-                        if ip.lower() == 'none':
-                            tmp_ip_array.append(ip)
+                    for argument in arguments:
+                        if argument.lower() == 'none':
+                            tmp_ip_array.append(argument)
                             continue
-                        if _is_shorthand_ip(ip):
-                            ip = _explode_shorthand_ip_string(ip)
-                        ip = binascii.unhexlify(ip.replace(":", "")) #.decode('hex')
-                        tmp_ip_array.append(ip)
-                    ips = tmp_ip_array
+                        if _is_shorthand_ip(argument):
+                            argument = _explode_shorthand_ip_string(argument)
+                        argument = binascii.unhexlify(argument.replace(":", "")) #.decode('hex')
+                        tmp_ip_array.append(argument)
+                    arguments = tmp_ip_array
 
 
                 # add the validated and parsed rule into our list of rules
-                self.rule_list.append(Rule(rule_type, domain, ips, rebinds, rebind_threshold))
+                self.rule_list.append(Rule(rule_type, domain, arguments, rebinds, rebind_threshold))
 
                 # increment the line number
                 lineno += 1
